@@ -1,0 +1,19 @@
+{
+    "prefix": "reproduce",
+    "dataset": "imagenet100",
+    "memory_size": 2000,
+    "memory_size_supervise": 500,
+    "memory_size_unsupervise": 1500,
+    "memory_per_class": 20,
+    "fixed_memory": false,
+    "shuffle": true,
+    "init_cls": 10,
+    "increment": 10,
+    "model_name": "icarl",
+    "convnet_type": "resnet18",
+    "device": ["3", "4"],
+    "seed": [1993],
+    "labeled_batch_size": 5,
+    "label_size":100
+}
+

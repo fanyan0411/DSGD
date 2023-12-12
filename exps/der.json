@@ -1,0 +1,18 @@
+{
+    "prefix": "labt20_2000fulllabel_test",
+    "dataset": "cifar100",
+    "memory_size": 5120,
+    "memory_size_supervise": 2500,
+    "memory_size_unsupervise": 2600,
+    "memory_per_class": 20,
+    "fixed_memory": false,
+    "shuffle": true,
+    "init_cls": 10,
+    "increment": 10,
+    "model_name": "der",
+    "convnet_type": "resnet32",
+    "device": ["2","3"],
+    "seed": [1993],
+    "labeled_batch_size": 5,
+    "label_size":100
+}
