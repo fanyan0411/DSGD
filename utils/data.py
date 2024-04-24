@@ -24,6 +24,7 @@ class iCIFAR10(iData):
             mean=(0.4914, 0.4822, 0.4465), std=(0.2023, 0.1994, 0.2010)
         ),
     ]
+    #Strong Augmentation
     train_trsf_s = [
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(p=0.5),
@@ -60,6 +61,8 @@ class iCIFAR100(iData):
         ),
     ]
 
+    class_order = np.arange(100).tolist()
+
     train_trsf_s = [
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(p=0.5),
@@ -68,8 +71,6 @@ class iCIFAR100(iData):
         transforms.ToTensor(),
     ]
 
-    class_order = np.arange(100).tolist()
-    
     def download_data(self):
         train_dataset = datasets.cifar.CIFAR100("./data", train=True, download=True)
         test_dataset = datasets.cifar.CIFAR100("./data", train=False, download=True)
@@ -90,6 +91,7 @@ class iCIFAR100(iData):
             test_dataset.test_labels     #FY
         )
     '''
+
 
 class iImageNet1000(iData):
     use_path = True
@@ -136,19 +138,12 @@ class iImageNet100(iData):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ]
 
-    train_trsf_s = [
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.ColorJitter(brightness=63 / 255),
-        RandAugmentMC(n=2, m=10)
-        ]
-
     class_order = np.arange(1000).tolist()
 
     def download_data(self):
-        #assert 0, "You should specify the folder of your dataset"
-        train_dir = "../../../data/imagenet100/train.X1/"
-        test_dir = "../../../data/imagenet100/val.X/"
+        assert 0, "You should specify the folder of your dataset"
+        train_dir = "[DATA-PATH]/train/"
+        test_dir = "[DATA-PATH]/val/"
 
         train_dset = datasets.ImageFolder(train_dir)
         test_dset = datasets.ImageFolder(test_dir)
