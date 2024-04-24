@@ -1,9 +1,7 @@
 {
     "prefix": "reproduce",
     "dataset": "cifar10",
-    "memory_size":5120,
-    "memory_size_supervise": 5120,
-    "memory_size_unsupervise": 0,
+    "memory_size":2000,
     "memory_per_class": 200,
     "fixed_memory": false,
     "shuffle": true,
@@ -13,7 +11,6 @@
     "convnet_type": "resnet32",
     "device": ["4","5"], 
     "seed": [1993],
-    "labeled_batch_size": 5,
     "label_size":10
 }
 
