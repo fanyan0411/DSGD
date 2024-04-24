@@ -1,9 +1,7 @@
 {
-    "prefix": "reproduce",
+    "prefix": "reproduce_20240413",
     "dataset": "cifar100",
     "memory_size": 2000,
-    "memory_size_supervise": 500,
-    "memory_size_unsupervise": 1500,
     "memory_per_class": 20,
     "fixed_memory": false,
     "shuffle": true,
@@ -11,9 +9,8 @@
     "increment": 10,
     "model_name": "icarl",
     "convnet_type": "resnet32",
-    "device": ["0","1"], 
+    "device": ["0","1"],
     "seed": [1993],
-    "labeled_batch_size": 5,
     "label_size":100
 }
 
