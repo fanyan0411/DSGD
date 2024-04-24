@@ -4,10 +4,10 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 from utils.data import iCIFAR10, iCIFAR100, iImageNet100, iImageNet1000
-import torch
+
 
 class DataManager(object):
-    def __init__(self, dataset_name, shuffle, seed, init_cls, increment, args):
+    def __init__(self, dataset_name, shuffle, seed, init_cls, increment, label_num):
         self.dataset_name = dataset_name
         self._setup_data(dataset_name, shuffle, seed)
         assert init_cls <= len(self._class_order), "No enough classes."
@@ -17,14 +17,14 @@ class DataManager(object):
         offset = len(self._class_order) - sum(self._increments)
         if offset > 0:
             self._increments.append(offset)
-        self.label_num = args["label_num"]
+        self.label_num = label_num
 
     @property
     def nb_tasks(self):
         return len(self._increments)
 
     def get_task_size(self, task):
-        return self._increments[task]  #[10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+        return self._increments[task]
 
     def get_total_classnum(self):
         return len(self._class_order)
@@ -56,8 +56,8 @@ class DataManager(object):
             trsf_s = trsf
         else:
             raise ValueError("Unknown mode {}.".format(mode))
-        
-        ## 确定标记信息
+
+        ## Load annotation information
         if mode != "test" or len(y) != 10000:
             fkeys_path = './data'
             dataset_name = self.dataset_name + '_labelindex'
@@ -77,60 +77,41 @@ class DataManager(object):
             label_index[label_index_value] = 1
         else:
             label_index = np.ones_like(y)
-        ## 确定标记信息  end
+        ## 
+
         data, targets, pse_targets, lab_index_task, task_idxes = [], [], [], [], []
         for idx in indices:
             if m_rate is None:
                 class_data, class_targets, class_label_index, idxes = self._select(
                     x, y, label_index, low_range=idx, high_range=idx + 1
-                ) #FY   class_label_index 表示该样本是否有标签, idxes 表示该类别的样本id
+                )
             else:
                 class_data, class_targets, class_label_index = self._select_rmm(
-                    x, y, label_index, low_range=idx, high_range=idx + 1, m_rate=m_rate
+                    x, y, label_index, label_index, low_range=idx, high_range=idx + 1, m_rate=m_rate
                 )
             data.append(class_data)
             targets.append(class_targets)
             pse_targets.append(np.ones_like(class_targets) * -100)
             lab_index_task.append(class_label_index)  #FY
-            task_idxes.append(idxes)  
-        
+            task_idxes.append(idxes) 
+
         if appendent is not None and len(appendent) != 0:
             appendent_data, appendent_targets, appendent_pse_targets, appendent_targets_lab_idx = appendent
             data.append(appendent_data)
             targets.append(appendent_targets)
             pse_targets.append(appendent_pse_targets)
-            lab_index_task.append(appendent_targets_lab_idx)  # FY
-            #task_idxes.append(np.ones_like(appendent_targets)) #FY 不知道为什么这么要这么写 0603
-            task_idxes.append(np.ones_like(appendent_targets)) ## 这里需要表示该样本是否有标签，以给后面batch中标记样本的分配提供便利
-        '''
-        if appendent is not None and len(appendent) != 0 and 1>0:
-            appendent_data, appendent_targets, appendent_pse_targets, appendent_targets_lab_idx = appendent
-            data.append(appendent_data)
-            targets.append(appendent_targets)
-            pse_targets.append(appendent_pse_targets)
-            lab_index_task.append(appendent_targets_lab_idx)  # FY
-            #task_idxes.append(np.ones_like(appendent_targets)) #FY 不知道为什么这么要这么写 0603
-            task_idxes.append(np.ones_like(appendent_targets)) ## 这里需要表示该样本是否有标签，以给后面batch中标记样本的分配提供便利
-        
-        if appendent is not None and len(appendent) != 0 and 1>0:
-            appendent_data, appendent_targets, appendent_pse_targets, appendent_targets_lab_idx = appendent
-            data.append(appendent_data)
-            targets.append(appendent_targets)
-            pse_targets.append(appendent_pse_targets)
-            lab_index_task.append(appendent_targets_lab_idx)  # FY
-            #task_idxes.append(np.ones_like(appendent_targets)) #FY 不知道为什么这么要这么写 0603
-            task_idxes.append(np.ones_like(appendent_targets)) ## 这里需要表示该样本是否有标签，以给后面batch中标记样本的分配提供便利
-        '''
+            task_idxes.append(np.ones_like(appendent_targets))
+            lab_index_task.append(appendent_targets_lab_idx)
+
         data, targets = np.concatenate(data), np.concatenate(targets)
         pse_targets = np.concatenate(pse_targets)
         lab_index_task = np.concatenate(lab_index_task)
         task_idxes = np.concatenate(task_idxes)
-        
+
         if ret_data:
             return data, targets, DummyDataset(data, targets, pse_targets, lab_index_task, trsf, trsf_s, self.use_path)
         else:
-            #print('here1', self.use_path)
-            return DummyDataset(data, targets, pse_targets, lab_index_task, trsf, trsf_s, self.use_path), task_idxes  #FY
+            return DummyDataset(data, targets, pse_targets, lab_index_task, trsf, trsf_s, self.use_path), task_idxes
 
     def get_dataset_with_split(
         self, indices, source, mode, appendent=None, val_samples_per_class=0
@@ -202,7 +183,6 @@ class DataManager(object):
         self._test_trsf = idata.test_trsf
         self._common_trsf = idata.common_trsf
         self._train_trsf_s = idata.train_trsf_s
-
         # Order
         order = [i for i in range(len(np.unique(self._train_targets)))]
         if shuffle:
@@ -219,7 +199,7 @@ class DataManager(object):
         )
         self._test_targets = _map_new_class_index(self._test_targets, self._class_order)
 
-    def _select(self, x, y,label_index, low_range, high_range):
+    def _select(self, x, y, label_index, low_range, high_range):
         idxes = np.where(np.logical_and(y >= low_range, y < high_range))[0]
         return x[idxes], y[idxes], label_index[idxes], idxes
 
@@ -246,17 +226,16 @@ class DummyDataset(Dataset):
         assert len(images) == len(labels), "Data size error!"
         self.images = images
         self.labels = labels
-        self.lab_index_task = lab_index_task
-        self.pse_labels = pse_labels
         self.trsf = trsf
         self.use_path = use_path
         self.trsf_s = trsf_s
+        self.lab_index_task = lab_index_task
+        self.pse_labels = pse_labels
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
-        #print(self.use_path)
         if self.use_path:
             image_w = self.trsf(pil_loader(self.images[idx]))
             image_s = self.trsf_s(pil_loader(self.images[idx]))  # 20230704 for imagenet
@@ -267,7 +246,6 @@ class DummyDataset(Dataset):
         label = self.labels[idx]
         pse_labels = self.pse_labels[idx]
         lab_index_task = self.lab_index_task[idx]
-        
 
         return idx, image_w, image_s, label, pse_labels, lab_index_task
 
