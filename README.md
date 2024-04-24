@@ -30,7 +30,7 @@ Official PyTorch implementation of our AAAI 2024 paper "[Dynamic Sub-graph Disti
 
 ### Datasets
 
-We have implemented the pre-processing of `CIFAR10`,  `CIFAR100`, and  `imagenet100,` . When training on `CIFAR10` and `CIFAR100`, this framework will automatically download it.  When training on `imagenet100`, you should specify the folder of your dataset in `utils/data.py`.
+We have implemented the pre-processing of `CIFAR10`,  `CIFAR100`, and  `imagenet100`. When training on `CIFAR10` and `CIFAR100`, this framework will automatically download it.  When training on `imagenet100`, you should specify the folder of your dataset in `utils/data.py`.
 
 ```python
     def download_data(self):
@@ -49,7 +49,7 @@ We have implemented the pre-processing of `CIFAR10`,  `CIFAR100`, and  `imagenet
 python main.py --config=./exps/[MODEL NAME].json --label_num [NUM OF LABELED DATA]
 ```
 
-where [MODEL NAME] should be chosen from `icarl`, `der`, etc.
+where [MODEL NAME] should be chosen from `icarl`, `der`, `icarl_10`, `der_10` etc.
 
 
 
