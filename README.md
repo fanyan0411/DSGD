@@ -5,7 +5,7 @@
   </div>
 
   <div>
-      Yan Fan*&emsp; Yu Wang*&emsp; Pengfei Zhu&emsp; Qinghua Hu
+      Yan Fan&emsp; Yu Wang*&emsp; Pengfei Zhu&emsp; Qinghua Hu
   </div>
 
 
