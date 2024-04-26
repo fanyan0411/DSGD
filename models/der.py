@@ -18,14 +18,14 @@ EPSILON = 1e-8
 from time import time
 import pickle
 
-init_epoch = 1
+init_epoch = 200
 init_lr = 0.1
 init_milestones = [60, 120, 170]
 init_lr_decay = 0.1
 init_weight_decay = 0.0005
 
 
-epochs = 1
+epochs = 170
 lrate = 0.1
 milestones = [80, 120, 150]
 lrate_decay = 0.1
