@@ -214,7 +214,7 @@ class BaseLearner(object):
             vectors.append(tensor2numpy(_vectors))
             targets.append(_targets)
             lab_index_task.append(_lab_index_task)
-            #记录伪标签
+            #
             logits.append(tensor2numpy(_logits))
             preds.append(tensor2numpy(_preds))
         return np.concatenate(vectors), np.concatenate(targets), np.concatenate(lab_index_task), \
