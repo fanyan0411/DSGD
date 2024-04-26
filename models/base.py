@@ -19,7 +19,7 @@ class BaseLearner(object):
         self._network = None
         self._old_network = None
         self._data_memory, self._targets_memory = np.array([]), np.array([])
-        self.topk = 2 #5 # TODO
+        self.topk = 2 #5 # 2 for cifar10, 5 for cifar100 and imagenet100
         
         self._targets_memory_lab_idx = np.array([])  
         self._pse_targets_memory = np.array([])      
