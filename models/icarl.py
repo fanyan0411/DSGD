@@ -228,6 +228,7 @@ class iCaRL(BaseLearner):
             logging.info(info)
 
     def _update_representation(self, train_loader, test_loader, optimizer, scheduler):
+
         prog_bar = tqdm(range(epochs))
         for _, epoch in enumerate(prog_bar):
             self._network.train()
@@ -238,37 +239,36 @@ class iCaRL(BaseLearner):
             correct, total = 0, 0
             total_supervise = 0
             losses_match_logits = 0
-            for i, (_, inputs, inputs_s, targets, pse_targets, lab_index_task) in enumerate(train_loader):
+            for bi, (_, inputs, inputs_s, targets, pse_targets, lab_index_task) in enumerate(train_loader):
+                
                 inputs, targets = inputs.to(self._device), targets.to(self._device)
                 inputs_s = inputs_s.to(self._device)
                 logits = self._network(inputs)["logits"]
                 lab_index_task = lab_index_task.to(self._device) 
                 pse_targets = pse_targets.to(self._device)
+
                 
-                
-                if not self.full_supervise:
-                    targets = targets * lab_index_task + torch.ones_like(targets) * -100 * (1-lab_index_task) # mask labeles of unlabeled data in our setting
-                targets_withpse = targets * lab_index_task + pse_targets * (1-lab_index_task) # add previous pseudo labels to some unlabeled data
+                if not self.full_supervise == True:
+                    targets = targets * lab_index_task + torch.ones_like(targets) * -100 * (1-lab_index_task) # 20230608
+                targets_withpse = targets * lab_index_task + pse_targets * (1-lab_index_task) # 和上面的相比多了伪标签
+                loss_clf = F.cross_entropy(logits, targets)
 
                 if self.kd_onlylabel == True:
                     kd_onlylabel = lab_index_task
                 else:
                     kd_onlylabel = None
-                loss_clf = F.cross_entropy(logits, targets)
-                loss_kd = _KD_loss(
+                loss_kd =  _KD_loss(
                     logits[:, : self._known_classes],
                     self._old_network(inputs)["logits"],
                     T,
-                    kd_index=kd_onlylabel,
-                )
+                    lab_index_task=kd_onlylabel,
+                    )
 
                 with torch.no_grad():
-                    #logits_w = F.softmax(logits.clone(), 1)
-                    #wprobs, wpslab = logits_w.max(1)
-                    wprobs, wpslab = logits.clone().max(1)
-                    wpslab_target = (targets>-100) * targets + wpslab * (targets==-100)   # replace wpslab of labeled data into original targets
-                    wpslab_pse = (targets_withpse>-100) * targets_withpse + wpslab * (targets_withpse==-100) # Replace wpslab of labeled data into original targets, wpslab of unlabeled data into previous pseudo labels
-                mask = ((wprobs.ge(self.threshold).float() + (targets_withpse>-100)) > 0).float() 
+                    wprobs, wpslab = F.softmax(logits.clone(), 1).max(1)
+                    wpslab_target = (targets>-100) * targets + wpslab * (targets==-100)
+                    wpslab_pse = (targets_withpse>-100) * targets_withpse + wpslab * (targets_withpse==-100)  # 20230608 targets #
+                mask = ((wprobs.ge(self.threshold).float() + (targets_withpse>-100)) > 0).float()  #targets_withpse=-100表示新任务的无标记样本和旧任务的无伪标记样本
                 logits_s = self._network(inputs_s)["logits"]
 
                 def sigmoid_growth(x):
@@ -281,22 +281,21 @@ class iCaRL(BaseLearner):
                     '''
                     return 1 / (1 + np.exp(-1*(x - int(self.total_exp * 0.5))))
                 
-                if self.insert_pse_progressive == True:
+                if self.insert_pse_progressive:
                     if self.insert_pse == 'threshold':
                         if self._cur_task>4:
                             self.pse_weight = 0.5  # 如果采用逐渐加伪标签的方式，并且采用的是截断函数。
                     if self.insert_pse == 'logitstic':
                         self.pse_weight = sigmoid_growth(self._cur_task)
 
-                uloss = self.usp_weight * ((1-self.pse_weight) * torch.mean(mask * self.uce_loss(logits_s, wpslab_target)) + self.pse_weight * torch.mean(mask * self.uce_loss(logits_s, wpslab_pse)))
-                ## 
-                #print(logits.max(1), self._old_network(inputs)["logits"].max(1))
+                uloss  = self.usp_weight * ((1-self.pse_weight) * torch.mean(mask * self.uce_loss(logits_s, wpslab_target)) + self.pse_weight * torch.mean(mask * self.uce_loss(logits_s, wpslab_pse)))
+                
                 if self.match_weight>0:
-                    loss_match = matching_loss(self._old_network(inputs)["logits"], logits, self._known_classes, targets_withpse, targets, rw_alpha=self.rw_alpha, T=self.rw_T)
+                    loss_match = matching_loss(self._old_network(inputs)["logits"], logits, self._known_classes, targets_withpse, targets, rw_alpha=self.rw_alpha, T=self.rw_T, gamma=self.gamma_ml)
                     loss_match_logits = self.match_weight * loss_match['matching_loss_seed']
                 else:
                     loss_match_logits = torch.tensor(0)
-
+                
                 loss = loss_clf + loss_kd + uloss + loss_match_logits
 
                 optimizer.zero_grad()
@@ -314,8 +313,8 @@ class iCaRL(BaseLearner):
 
             scheduler.step()
             train_acc = np.around(tensor2numpy(correct) * 100 / total, decimals=2)
-            if epoch % 5 == 0:
-                test_acc, cnn_accy = self._compute_accuracy(self._network, test_loader)   # 20230613 FY
+            if (epoch+1) % 5 == 0 or epoch==0:
+                test_acc, cnn_accy = self._compute_accuracy(self._network, test_loader)
                 info = "Task {}, Epoch {}/{} => Loss {:.3f}, Loss_clf {:.3f}, Loss_kd {:.3f}, Loss_u {:.3f}, Loss_match {:.3f}, Train_accy {:.2f}, Test_accy {:.2f}".format(
                     self._cur_task,
                     epoch + 1,
@@ -331,14 +330,22 @@ class iCaRL(BaseLearner):
                 logging.info(cnn_accy["grouped"])
                 logging.info(info)
             else:
-                info = "Task {}, Epoch {}/{} => Loss {:.3f}, Train_accy {:.2f}".format(
+                info = "Task {}, Epoch {}/{} => Loss {:.3f}, Loss_clf {:.3f}, Loss_kd {:.3f}, Loss_u {:.3f}, Loss_m {:.3f}, Train_accy {:.2f}".format(
                     self._cur_task,
                     epoch + 1,
                     epochs,
                     losses / len(train_loader),
-                    train_acc,
+                    losses_clf / len(train_loader),
+                    losses_kd / len(train_loader),
+                    ulosses / len(train_loader),
+                    losses_match_logits / len(train_loader),
+                    train_acc
                 )
+                logging.info(info)
             prog_bar.set_description(info)
+
+        logging.info('training time of each epoch: {:.3f}s'.format((time() - prog_bar.start_t)/(epoch+1)))
+
             
 
 
