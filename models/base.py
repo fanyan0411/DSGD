@@ -348,7 +348,7 @@ class BaseLearner(object):
                         exemplar_vectors, axis=0
                     )  # [feature_dim] sum of selected exemplars vectors
                     mu_p = (vectors_super + S) / k  # [n, feature_dim] sum to all vectors
-                    i = np.argmin(np.sqrt(np.sum((class_mean_supervise - mu_p) ** 2, axis=1))) # 选出的数和中心点离得近，同时距离之前选择的点中心远一些
+                    i = np.argmin(np.sqrt(np.sum((class_mean_supervise - mu_p) ** 2, axis=1))) # 
                     selected_exemplars.append(
                         np.array(data_super[i])
                     )  # New object to avoid passing by inference
@@ -368,7 +368,7 @@ class BaseLearner(object):
            
         
             ## Select unlabeled samples from all unlabeled data
-            if m_unsuper and (class_idx) == self._total_classes-1 and m_unsuper<(data.shape[0]-super_idx.shape[0]): # 后者判断的前提是base的类别数量个数要大于等于incre的数量
+            if m_unsuper and (class_idx) == self._total_classes-1: # 
                 # Load all data
                 data, targets, idx_dataset = data_manager.get_dataset(
                 np.arange(self._known_classes, self._total_classes),
@@ -423,52 +423,7 @@ class BaseLearner(object):
                     targets_unsuper = np.delete(
                         targets_unsuper, i, axis=0
                     )
-            elif m_unsuper and (class_idx) == self._total_classes-1 and m_unsuper>=(data.shape[0]-super_idx.shape[0]):
-                # Load all data
-                data, targets, idx_dataset = data_manager.get_dataset(
-                np.arange(self._known_classes, self._total_classes),
-                source="train", 
-                mode="test",
-                ret_data=True,
-                )
-                m_unsuper = m_unsuper * (self._total_classes - self._known_classes)
-                idx_loader = DataLoader(
-                    idx_dataset, batch_size=batch_size, shuffle=False, num_workers=4
-                )
-                vectors, _, lab_index_tasl_class, logits, pseulabel = self._extract_vectors_and_psedolabel(idx_loader)
-                vectors = (vectors.T / (np.linalg.norm(vectors.T, axis=0) + EPSILON)).T
-                class_mean = np.mean(vectors, axis=0)
-                
-                
-                unsuper_idx = np.where((idx_dataset.lab_index_task==0) * (logits.max(1)>self.oldpse_thre))[0]  
-                if len(unsuper_idx) < m_unsuper:
-                    #num_supp_idx = m_unsuper + 1 - len(unsuper_idx)
-                    #unsuper_idx = np.stack(unsuper_idx,(np.random.permutation(len(unsuper_idx))[:num_supp_idx]))
-                    m_unsuper = len(unsuper_idx)
-                vectors_unsuper = vectors[unsuper_idx]
-                data_unsuper = data[unsuper_idx]
-                #targets_unsuper = targets[unsuper_idx]
-                if 'icarl' in self.args["config"].split('/')[-1]: ## 20230628 这里之前写的不适合icarl_10
-                    pseulabel = pseulabel + self._known_classes
 
-                targets_unsuper = targets[unsuper_idx]
-                class_mean_unsupervise = np.mean(vectors_unsuper, axis=0)
-
-                pse_targets_unsuper = pseulabel[unsuper_idx]  #
-                
-                for k in range(m_unsuper):
-                    selected_exemplars.append(
-                        np.array(data_unsuper[k])
-                    )  # New object to avoid passing by inference
-
-                    selected_exemplars_lab_idx.append(np.array(0))  # 20230515
-                    selected_exemplars_targets.append(np.array(targets_unsuper[k]))
-                    selected_exemplars_pse_targets.append(np.array(pse_targets_unsuper[k]))
-                    exemplar_vectors.append(
-                        np.array(vectors_unsuper[k])
-                    )  # New object to avoid passing by inference
-
-            
             selected_exemplars = np.array(selected_exemplars)
             selected_exemplars_lab_idx = np.array(selected_exemplars_lab_idx)  #FY
             exemplar_targets = np.array(selected_exemplars_targets)
