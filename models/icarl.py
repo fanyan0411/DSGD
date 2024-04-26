@@ -202,7 +202,7 @@ class iCaRL(BaseLearner):
             train_acc = np.around(tensor2numpy(correct) * 100 / total, decimals=2)
 
             if epoch % 5 == 0:
-                test_acc,_ = self._compute_accuracy(self._network, test_loader)   # 20230613 FY
+                test_acc,_ = self._compute_accuracy(self._network, test_loader)   
                 info = "Task {}, Epoch {}/{} => Loss {:.3f}, Loss_clf {:.3f}, uloss {:.3f}, Train_accy {:.2f}, Test_accy {:.2f}".format(
                     self._cur_task,
                     epoch + 1,
@@ -249,8 +249,8 @@ class iCaRL(BaseLearner):
 
                 
                 if not self.full_supervise == True:
-                    targets = targets * lab_index_task + torch.ones_like(targets) * -100 * (1-lab_index_task) # 20230608
-                targets_withpse = targets * lab_index_task + pse_targets * (1-lab_index_task) # 和上面的相比多了伪标签
+                    targets = targets * lab_index_task + torch.ones_like(targets) * -100 * (1-lab_index_task) 
+                targets_withpse = targets * lab_index_task + pse_targets * (1-lab_index_task) 
                 loss_clf = F.cross_entropy(logits, targets)
 
                 if self.kd_onlylabel == True:
@@ -267,24 +267,24 @@ class iCaRL(BaseLearner):
                 with torch.no_grad():
                     wprobs, wpslab = F.softmax(logits.clone(), 1).max(1)
                     wpslab_target = (targets>-100) * targets + wpslab * (targets==-100)
-                    wpslab_pse = (targets_withpse>-100) * targets_withpse + wpslab * (targets_withpse==-100)  # 20230608 targets #
-                mask = ((wprobs.ge(self.threshold).float() + (targets_withpse>-100)) > 0).float()  #targets_withpse=-100表示新任务的无标记样本和旧任务的无伪标记样本
+                    wpslab_pse = (targets_withpse>-100) * targets_withpse + wpslab * (targets_withpse==-100)  
+                mask = ((wprobs.ge(self.threshold).float() + (targets_withpse>-100)) > 0).float()  
                 logits_s = self._network(inputs_s)["logits"]
 
                 def sigmoid_growth(x):
                     '''
                     L / (1 + np.exp(-k*(x - x0)))
-                    # 设置S形生长函数的参数
-                    L = 1  # 饱和值
-                    k = 1  # 增长率
-                    x0 = 5   # 达到饱和值一半的时间或相关变量的值
+                    # 
+                    L = 1  # 
+                    k = 1  # 
+                    x0 = 5   # 
                     '''
                     return 1 / (1 + np.exp(-1*(x - int(self.total_exp * 0.5))))
                 
                 if self.insert_pse_progressive:
                     if self.insert_pse == 'threshold':
                         if self._cur_task>4:
-                            self.pse_weight = 0.5  # 如果采用逐渐加伪标签的方式，并且采用的是截断函数。
+                            self.pse_weight = 0.5  
                     if self.insert_pse == 'logitstic':
                         self.pse_weight = sigmoid_growth(self._cur_task)
 
