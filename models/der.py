@@ -210,6 +210,7 @@ class DER(BaseLearner):
                 with torch.no_grad():
                     logits_w = F.softmax(logits.clone(), 1)
                     wprobs, wpslab = logits_w.max(1)
+                    wpslab = (targets>-100) * targets + wpslab * (targets==-100)
                 mask = wprobs.ge(self.threshold).float()
                 logits_s = self._network(inputs_s)["logits"]
                 uloss  = torch.mean(mask * self.uce_loss(logits_s, wpslab))  # unsupervised loss, 表示无标记样本的损失
