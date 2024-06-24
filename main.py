@@ -30,8 +30,7 @@ def setup_parser():
     parser = argparse.ArgumentParser(description='Reproduce of multiple continual learning algorthms.')
     parser.add_argument('--config', type=str, default='./exps/icarl_10.json',
                         help='Json file of settings.')
-    parser.add_argument('--prefix', type=str, default='test', #uloss0.04_sbshalf_2_200epoch_nounlabelkd uloss0.5_reweight_sbshalf_2_200epoch_nounlabelkd
-                        help='prefix of log file')
+    parser.add_argument('--prefix', type=str, default='test', help='prefix of log file') #uloss0.04_sbshalf_2_200epoch_nounlabelkd uloss0.5_reweight_sbshalf_2_200epoch_nounlabelkd
     parser.add_argument('--label_num', type=str, default='300',
                         help='number of labeled data, need to be equal to prefix and bigger than memory_size_supervise') 
     parser.add_argument('--full_supervise', action='store_true')
@@ -40,8 +39,8 @@ def setup_parser():
     parser.add_argument('--kd_weight', type=float, default=1, help='the weight of kd distill loss')
     parser.add_argument('--kd_onlylabel', action='store_true') #, default=True
     ## Memory setting
-    parser.add_argument('--memory_size_supervise', type=int, default=300)
-    parser.add_argument('--memory_size_unsupervise', type=int, default=1700)
+    parser.add_argument('--memory_size_supervise', type=int, default=500, help='the number of supervised samples in memory buffer, 500|1000|1500')
+    parser.add_argument('--memory_size_unsupervise', type=int, default=1500, help='the number of unsupervised samples in memory buffer, 1500|1000|500')
     ## DSGD
     parser.add_argument('--usp_weight',type=float, default=1, help='weight of semi-supervised loss')
     parser.add_argument('--insert_pse_progressive', action='store_true', help='adapt pseudo label of last model in semi-supervised loss', default=True)
@@ -49,7 +48,7 @@ def setup_parser():
     parser.add_argument('--pse_weight', type=float, default=1.0, help='the weight of pseudo label in uloss')
     parser.add_argument('--oldpse_thre', type=float, default=0.8, help='the threshold of old pseudo label')
     parser.add_argument('--rw_alpha', type=float, default=0, help='the weight of graph embedding') #TODO
-    parser.add_argument('--match_weight', type=float, default=0.2, help='the weight of sub-graph distill')
+    parser.add_argument('--match_weight', type=float, default=0.2, help='the weight of sub-graph distill, 0.2 for cifar10, 1 for cifar100, 0.04 for imagenet')
     parser.add_argument('--rw_T', type=int, default=2, help='the order of structure embedding') #TODO
     parser.add_argument('--gamma_ml', type=float, default=1)
     ## Commom setting
