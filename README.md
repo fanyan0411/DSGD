@@ -40,7 +40,7 @@ We have implemented the pre-processing of `CIFAR10`,  `CIFAR100`, and  `imagenet
 ```
 
 ### Run experiment
-
+0. Generate the label_index files based on [https://github.com/brain-research/realistic-ssl-evaluation]. (We have also provide our label_index files in ./data/[DATA NAME]_labelindex)
 1. Edit the `[MODEL NAME].json` file for global settings.
 2. Edit the hyperparameters in the corresponding `[MODEL NAME].py` file (e.g., `models/icarl.py`).
 3. Run:
