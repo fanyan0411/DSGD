@@ -13,7 +13,9 @@
 
 </div>
 
-Official PyTorch implementation of our AAAI 2024 paper "[Dynamic Sub-graph Distillation for Robust Semi-supervised Continual Learning](https://ojs.aaai.org/index.php/AAAI/article/view/29079)". 
+Official PyTorch implementation of our AAAI 2024 paper "[Dynamic Sub-graph Distillation for Robust Semi-supervised Continual Learning](https://ojs.aaai.org/index.php/AAAI/article/view/29079)". The code has been aggreated to our new work on SSCL "[PsHD]https://github.com/fanyan0411/PsHD". Please move to the new repository for more comprehensive discussion. 
+
+
 
 ## How to run DSGD?
 
